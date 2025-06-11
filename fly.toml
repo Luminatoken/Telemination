@@ -2,11 +2,51 @@ app = "telemination-game"
 primary_region = "iad"
 
 [build]
-  dockerfile = "Dockerfile"
+  image = "luminatoken/telemination:latest"
 
 [env]
   BOT_TOKEN = "8003276937:AAH_3STTw5r2UBnzCGYjCtjpz3TEBrvDcf4"
+  MAX_PLAYERS = "500"
+  ADMIN_USERNAME = "@revrec2"
 
 [http_service]
   internal_port = 8080
   force_https = true
+  processes = ["app"]
+  concurrency = { type = "connections", hard_limit = 500, soft_limit = 450 }
+  [http_service.ports]
+    http = 80
+    https = 443
+  [http_service.tls_options]
+    alpn = ["http/1.1", "h2"]
+
+[[services]]
+  protocol = "tcp"
+  internal_port = 8080
+  processes = ["app"]
+  [services.ports]
+    handlers = ["http"]
+    port = 80
+  [services.ports]
+    handlers = ["tls", "http"]
+    port = 443
+
+[checks]
+  [checks.health]
+    type = "http"
+    interval = "10s"
+    timeout = "5s"
+    path = "/health"
+    method = "get"
+    protocol = "http"
+    grace_period = "5s"
+
+[deploy]
+  strategy = "rolling"
+
+[experimental]
+  auto_rollback = true
+
+[vm]
+  size = "shared-cpu-1x"
+  memory = 256
