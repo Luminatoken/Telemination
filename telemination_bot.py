@@ -6,8 +6,8 @@ from telegram import Update, User
 from telegram.ext import Application, CommandHandler, ContextTypes, CallbackContext
 from telegram.error import TelegramError
 
-# Config (get BOT_TOKEN from env)
-BOT_TOKEN: str = os.getenv("BOT_TOKEN")
+# Config (hardcoded BOT_TOKEN and ADMIN_USERNAME)
+BOT_TOKEN: str = "8003276937:AAH_3STTw5r2UBnzCGYjCtjpz3TEBrvDcf4"
 ADMIN_USERNAME: str = "@revrec2"
 MAX_PLAYERS: int = 500
 
@@ -131,7 +131,7 @@ async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> N
 
 
 def main() -> None:
-    if not BOT_TOKEN:
+    if not BOT_TOKEN: "8003276937:AAH_3STTw5r2UBnzCGYjCtjpz3TEBrvDcf4"
         logger.error("BOT_TOKEN environment variable is not set.")
         raise RuntimeError("BOT_TOKEN environment variable not set.")
 
