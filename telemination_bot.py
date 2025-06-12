@@ -1,9 +1,8 @@
 import logging
-import os
 from typing import Dict, Any
 
 from telegram import Update, User
-from telegram.ext import Application, CommandHandler, ContextTypes, CallbackContext
+from telegram.ext import Application, CommandHandler, ContextTypes
 from telegram.error import TelegramError
 
 # Config (hardcoded BOT_TOKEN and ADMIN_USERNAME)
@@ -131,9 +130,9 @@ async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> N
 
 
 def main() -> None:
-    if not BOT_TOKEN: "8003276937:AAH_3STTw5r2UBnzCGYjCtjpz3TEBrvDcf4"
-        logger.error("BOT_TOKEN environment variable is not set.")
-        raise RuntimeError("BOT_TOKEN environment variable not set.")
+    if not BOT_TOKEN:"8003276937:AAH_3STTw5r2UBnzCGYjCtjpz3TEBrvDcf4"
+        logger.error(""8003276937:AAH_3STTw5r2UBnzCGYjCtjpz3TEBrvDcf4" environment variable is not set.")
+        raise RuntimeError(""8003276937:AAH_3STTw5r2UBnzCGYjCtjpz3TEBrvDcf4" environment variable not set.")
 
     application = Application.builder().token(BOT_TOKEN).build()
 
