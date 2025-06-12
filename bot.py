@@ -1,118 +1,103 @@
 import logging
-from typing import Dict, Any
+import os
 from telegram import Update
 from telegram.ext import Application, CommandHandler, ContextTypes
-from telegram.error import TelegramError
 
-BOT_TOKEN: str = "8003276937:AAH_3STTw5r2UBnzCGYjCtjpz3TEBrvDcf4"
-MAX_PLAYERS: int = 500
-ADMIN_USERNAME: str = "@revrec2"
+# Configuration
+BOT_TOKEN = os.getenv('BOT_TOKEN')
+MAX_PLAYERS = 500
+ADMIN_USERNAME = "@revrec2"
+current_round = 1
+players = {}
+player_counter = 1
 
-current_round: int = 1
-players: Dict[int, Dict[str, Any]] = {}
-assigned_numbers: set[int] = set()
-
+# Set up logging
 logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    level=logging.INFO
 )
-logger = logging.getLogger("telemination-bot")
+logger = logging.getLogger(__name__)
 
-def get_next_number() -> int:
-    for num in range(1, MAX_PLAYERS + 1):
-        if num not in assigned_numbers:
-            return num
-    return -1
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    global player_counter
+    user = update.effective_user
+    player_id = str(user.id)
+    
+    if player_id in players:
+        await update.message.reply_text("⚠️ You're already registered!")
+        return
+        
+    # Assign unique player number
+    player_number = str(player_counter).zfill(3)
+    player_counter += 1
+    
+    # Track player
+    players[player_id] = {
+        "name": user.full_name,
+        "number": player_number,
+        "round": current_round
+    }
+    
+    await update.message.reply_html(
+        f"💀 <b>PLAYER {player_number} REGISTERED</b> 💀\n\n"
+        f"Welcome {user.mention_html()}!\n"
+        f"Round: {current_round}\n"
+        f"Players: {len(players)}/{MAX_PLAYERS}\n\n"
+        "Type <b>/join</b> to confirm entry"
+    )
 
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    try:
-        user = update.effective_user
-        player_id = user.id
-        if player_id in players:
-            await update.message.reply_text(
-                f"💀 PLAYER {players[player_id]['number']:03d} REGISTERED 💀\n"
-                f"Welcome {user.full_name}!\n"
-                f"Round: {current_round}\n"
-                f"Players: {len(players)}/{MAX_PLAYERS}"
-            )
-            return
-        if len(players) >= MAX_PLAYERS:
-            await update.message.reply_text("🚨 ROUND FULL! Next round starts soon")
-            return
-        number = get_next_number()
-        if number == -1:
-            await update.message.reply_text("🚨 ROUND FULL! Next round starts soon")
-            return
-        assigned_numbers.add(number)
-        players[player_id] = {
-            "name": user.full_name,
-            "number": number,
-            "confirmed": False,
-        }
-        await update.message.reply_text(
-            f"💀 PLAYER {number:03d} REGISTERED 💀\n"
-            f"Welcome {user.full_name}!\n"
-            f"Round: {current_round}\n"
-            f"Players: {len(players)}/{MAX_PLAYERS}"
-        )
-    except TelegramError as e:
-        logger.error(f"Telegram API error in /start: {e}")
+async def join(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.effective_user
+    player_id = str(user.id)
+    
+    if player_id not in players:
+        await update.message.reply_text("⚠️ Please /start first!")
+        return
+        
+    if len(players) >= MAX_PLAYERS:
+        await update.message.reply_text("🚨 ROUND FULL! Next round starts soon")
+        return
+        
+    player_data = players[player_id]
+    await update.message.reply_text(
+        f"✅ ENTRY CONFIRMED!\n"
+        f"Player Number: #{player_data['number']}\n"
+        f"Status: Active contestant\n"
+        f"Players ready: {len(players)}/{MAX_PLAYERS}"
+    )
 
-async def join(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    try:
-        user = update.effective_user
-        player_id = user.id
-        if player_id not in players:
-            await update.message.reply_text("Please use /start to register first.")
-            return
-        if players[player_id]["confirmed"]:
-            await update.message.reply_text(
-                f"✅ CONFIRMED!\nNumber: #{players[player_id]['number']:03d}\n"
-                f"Players: {len(players)}/{MAX_PLAYERS}"
-            )
-            return
-        if len(players) > MAX_PLAYERS:
-            await update.message.reply_text("🚨 ROUND FULL! Next round starts soon")
-            return
-        players[player_id]["confirmed"] = True
-        await update.message.reply_text(
-            f"✅ CONFIRMED!\nNumber: #{players[player_id]['number']:03d}\n"
-            f"Players: {len(players)}/{MAX_PLAYERS}"
-        )
-        if sum(1 for p in players.values() if p["confirmed"]) >= MAX_PLAYERS:
-            await reset_round(context)
-    except TelegramError as e:
-        logger.error(f"Telegram API error in /join: {e}")
+async def players_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.effective_user
+    if user.username != ADMIN_USERNAME[1:]:
+        await update.message.reply_text("⛔ Admin access required!")
+        return
+        
+    player_list = "\n".join(
+        f"{data['number']}: {data['name']}" 
+        for data in players.values()
+    )
+    
+    await update.message.reply_text(
+        f"👥 ACTIVE PLAYERS (Round {current_round})\n"
+        f"Total: {len(players)}/{MAX_PLAYERS}\n\n"
+        f"{player_list}"
+    )
 
-async def players_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    try:
-        user = update.effective_user
-        if user.username != ADMIN_USERNAME.lstrip("@"):
-            return
-        player_list = [
-            f"{p['number']:03d}: {p['name']}" for p in sorted(players.values(), key=lambda x: x["number"])
-        ]
-        msg = f"👥 PLAYERS: {len(players)}/{MAX_PLAYERS}\n" + ", ".join(player_list)
-        await update.message.reply_text(msg)
-    except TelegramError as e:
-        logger.error(f"Telegram API error in /players: {e}")
-
-async def reset_round(context: ContextTypes.DEFAULT_TYPE) -> None:
-    global current_round, players, assigned_numbers
+def reset_round():
+    global current_round, players, player_counter
     current_round += 1
     players = {}
-    assigned_numbers = set()
-    logger.info(f"Round reset. Now at round {current_round}")
+    player_counter = 1
+    logger.info(f"Round reset to {current_round}")
 
-async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
-    logger.error(f"Exception: {context.error}")
-
-def main() -> None:
+def main():
     application = Application.builder().token(BOT_TOKEN).build()
+    
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("join", join))
-    application.add_handler(CommandHandler("players", players_command))
-    application.add_error_handler(error_handler)
+    application.add_handler(CommandHandler("players", players_cmd))
+    
+    logger.info("Telemination bot starting...")
     application.run_polling()
 
 if __name__ == "__main__":
