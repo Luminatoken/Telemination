@@ -130,9 +130,10 @@ async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> N
 
 
 def main() -> None:
-    if not BOT_TOKEN:"8003276937:AAH_3STTw5r2UBnzCGYjCtjpz3TEBrvDcf4"
-        logger.error(""8003276937:AAH_3STTw5r2UBnzCGYjCtjpz3TEBrvDcf4" environment variable is not set.")
-        raise RuntimeError(""8003276937:AAH_3STTw5r2UBnzCGYjCtjpz3TEBrvDcf4" environment variable not set.")
+    # If you use a hardcoded token, this check is just a sanity check.
+    if not BOT_TOKEN or BOT_TOKEN.strip() == "":
+        logger.error("BOT_TOKEN is not set. Please set it in the code or as an environment variable.")
+        raise RuntimeError("BOT_TOKEN is not set.")
 
     application = Application.builder().token(BOT_TOKEN).build()
 
