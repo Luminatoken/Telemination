@@ -98,7 +98,8 @@ async def join(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 async def players_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Admin-only: List all players for the current round."""
     user = update.effective_user
-    if (user.username and f"@{user.username}" == ADMIN_USERNAME) or (user.mention_html() == ADMIN_USERNAME):
+    if user.username and f"@{user.username}" == ADMIN_USERNAME:
+        # Admin actions...
         lines = [
             f"👥 PLAYERS (Round {current_round})",
             f"Total: {len(players)}/{MAX_PLAYERS}",
