@@ -138,7 +138,7 @@ def main() -> None:
     application = Application.builder().token(BOT_TOKEN).build()
 
     application.add_handler(CommandHandler("start", start))
-    application.add_handler(CommandHandler("join", join)
+    application.add_handler(CommandHandler("join", join))
     application.add_handler(CommandHandler("players", players_cmd))
 
     application.add_error_handler(error_handler)
