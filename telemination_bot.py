@@ -91,7 +91,9 @@ async def join(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text(
         f"✅ CONFIRMED!\nNumber: #{players[user_id]['number']:03d}\nStatus: Active contestant\nPlayers: {len(players)}/{MAX_PLAYERS}"
     )
-    logger.info(f"User {user_id} confirmed participation as #{players[user_id]['number']:03d} in round {current_round})
+    logger.info(
+    f"User {user_id} confirmed participation as #{players[user_id]['number']:03d} in round {current_round})"
+    )
 
 async def players_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Admin-only: List all players for the current round."""
