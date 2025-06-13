@@ -1,13 +1,18 @@
 import logging
 from typing import Dict, Any
+from dotenv import load_dotenv
+import os
 
 from telegram import Update, User
 from telegram.ext import Application, CommandHandler, ContextTypes
 from telegram.error import TelegramError
 
-# Config (hardcoded BOT_TOKEN and ADMIN_USERNAME)
-BOT_TOKEN: str = "8003276937:AAH_3STTw5r2UBnzCGYjCtjpz3TEBrvDcf4"
-ADMIN_USERNAME: str = "@revrec2"
+# Load environment variables from .env file
+load_dotenv()
+
+# Config (read BOT_TOKEN from environment variable)
+BOT_TOKEN: str = os.getenv("BOT_TOKEN", "")
+ADMIN_USERNAME: str = os.getenv("ADMIN_USERNAME", "@revrec2")
 MAX_PLAYERS: int = 500
 
 # Game state (in-memory)
@@ -22,7 +27,6 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-
 def get_display_name(user: User) -> str:
     """Get the user's display name for registration."""
     if user.full_name:
@@ -30,7 +34,6 @@ def get_display_name(user: User) -> str:
     if user.username:
         return f"@{user.username}"
     return f"ID:{user.id}"
-
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Register the user with a unique number for the current round."""
@@ -65,7 +68,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     )
     logger.info(f"User {user_id} registered as {player_num:03d} for round {current_round}")
 
-
 async def join(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Confirm the user's participation as an active contestant."""
     user = update.effective_user
@@ -89,8 +91,7 @@ async def join(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text(
         f"✅ CONFIRMED!\nNumber: #{players[user_id]['number']:03d}\nStatus: Active contestant\nPlayers: {len(players)}/{MAX_PLAYERS}"
     )
-    logger.info(f"User {user_id} confirmed participation as #{players[user_id]['number']:03d} in round {current_round}")
-
+    logger.info(f"User {user_id} confirmed participation as #{players[user_id]['number']:03d} in round {current_round})
 
 async def players_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Admin-only: List all players for the current round."""
@@ -109,7 +110,6 @@ async def players_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     else:
         await update.message.reply_text("❌ You are not authorized to use this command.")
 
-
 def reset_round() -> None:
     """Increment the round and reset all player data."""
     global current_round, players, player_counter
@@ -117,7 +117,6 @@ def reset_round() -> None:
     players.clear()
     player_counter = 1
     logger.info(f"Round reset. Now starting round {current_round}.")
-
 
 async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle errors from Telegram API."""
@@ -128,7 +127,6 @@ async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> N
         except TelegramError:
             pass  # Don't crash if we can't send a message
 
-
 def main() -> None:
     # If you use a hardcoded token, this check is just a sanity check.
     if not BOT_TOKEN or BOT_TOKEN.strip() == "":
@@ -138,14 +136,13 @@ def main() -> None:
     application = Application.builder().token(BOT_TOKEN).build()
 
     application.add_handler(CommandHandler("start", start))
-    application.add_handler(CommandHandler("join", join))
+    application.add_handler(CommandHandler("join", join)
     application.add_handler(CommandHandler("players", players_cmd))
 
     application.add_error_handler(error_handler)
 
     logger.info("Bot started.")
     application.run_polling()
-
 
 if __name__ == "__main__":
     main()
